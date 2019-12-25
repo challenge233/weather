@@ -2,10 +2,11 @@ package com.weather.android;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -25,13 +26,10 @@ import com.weather.android.util.HttpUtil;
 import com.weather.android.util.Utility;
 
 import org.litepal.LitePal;
-import org.litepal.crud.LitePalSupport;
-import org.litepal.exceptions.DataSupportException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -89,10 +87,26 @@ public class ChooseAreaFragment extends Fragment {
                      queryCounties();
                  }else if (currentLevel == LEVEL_COUNTY){
                      String weatherId = countyList.get(position).getWeatherId();
-                     Intent intent = new Intent(getActivity(),WeatherActivity.class);
-                     intent.putExtra("weather_id",weatherId);
-                     startActivity(intent);
-                     getActivity().finish();
+                     //城市切换
+                     if (getActivity() instanceof MainActivity) {
+                         Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                         intent.putExtra("weather_id", weatherId);
+                         startActivity(intent);
+                         getActivity().finish();
+                     //城市切换
+                     }else if (getActivity() instanceof WeatherActivity){
+                         WeatherActivity activity = (WeatherActivity) getActivity();
+
+                         //借助SharedPreferences将weatherId在选择城市后进行本地存储一下
+                         SharedPreferences.Editor editor= PreferenceManager.getDefaultSharedPreferences(getContext()).edit();
+                         editor.putString("weather_id",weatherId);
+                         editor.apply();
+
+                         activity.drawerLayout.closeDrawers();
+                         activity.swipeRefresh.setRefreshing(true);
+                         activity.requestWeather(weatherId);
+
+                     }
                  }
              }
          });
